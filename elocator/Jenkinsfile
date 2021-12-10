@@ -1,4 +1,4 @@
-//@Library(['eire-pipline-global-utilities']) _
+@Library(['eire-pipline-global-utilities']) _
 pipeline {
   tools {
     maven 'jenkin-mvn' 
