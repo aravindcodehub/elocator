@@ -18,27 +18,7 @@ pipeline {
       }
     }
     
-    stage('Make Container') {
-      steps {
-      sh "docker build -t elocator/elocator-service:${env.BUILD_ID} ."
-      sh "docker tag elocator/elocator-service:${env.BUILD_ID} elocator/elocator-service:latest"
-      }
-    }
+   
   } 
-  // Reference : http://www.stephan-schwab.com/2017/12/30/maven-docker-jenkins-pipeline.html
-
-	  post {
-	    always {
-	      archive 'target/**/*.jar'      
-	    }
-		    success {
-			      withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) 
-			      {
-			        sh "docker login -u ${USERNAME} -p ${PASSWORD}"
-			        sh "docker push elocator/elocator-service:${env.BUILD_ID}"
-			        sh "docker push elocator/elocator-service:latest"
-			     }
-		      }
-	  }
 	  
 }
