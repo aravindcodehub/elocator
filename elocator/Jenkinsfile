@@ -3,24 +3,16 @@ pipeline {
 
   tools {
     maven 'jenkin-mvn'
-  }
-  
-  environment {
-    PATH = "/path/to/dir:${env.PATH}"
-    JNK_PATH = "${env.WORKSPACE}\\"
-}
-
+  }  
+ 
   stages {
   
-    stage('Cloning Git') {
-	      steps {
-	        git([url: 'https://github.com/aravindcodehub/elocator.git', branch: 'master', credentialsId: 'd2703892-e658-4ac1-a465-880ca87fcf60'])
-	      }
-	    }
 	    
    stage('Build') {
       steps {
-        sh 'mvn package -Dmaven.test.skip=true'
+        sh 
+        echo "PATH = ${PATH}"
+        echo "M2_HOME = ${M2_HOME}"
       }
     }
     
