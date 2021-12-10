@@ -4,6 +4,11 @@ pipeline {
   tools {
     maven 'jenkin-mvn'
   }
+  
+  environment {
+    PATH = "/path/to/dir:${env.PATH}"
+    JNK_PATH = "${env.WORKSPACE}\\"
+}
 
   stages {
   
