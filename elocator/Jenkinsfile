@@ -1,44 +1,64 @@
+//@Library(['eire-pipline-global-utilities']) _
 pipeline {
-  environment {
-    imagename = "aravind/elocator"
-    registryCredential = 'docker-hub'
-    dockerImage = ''
-  }
-  agent any
   tools {
     maven 'jenkin-mvn' 
   }
+
+stages {
+		stage('Setup Pipeline Env') {
+			//Git stash
+			env.GIT_SSH_CLONE_URL="https://github.com/aravindcodehub/elocator.git"
+			env.GIT_BUILD_BRANCH="master"
+			env.GIT_CREDENTIAL="d2703892-e658-4ac1-a465-880ca87fcf60"
+			//mvn
+			env.MVN_POM="pom.xml"
+			env.MVN_OPTION="clean package -Dmaven.test.skip=true"
+			env.MVN_JAR="true"
+			env.MAJOR_MINOR_VERSION="21.12.00"
+			
+			//docker
+			env.EXECUTE_DOCKER_BUILD_PUSH ="true"
+			env.DOCKER_IMAGE_NAME="elocator/$(env.MAJOR_MINOR_VERSION)"
+			env.DOCKER_IMAGE_TAG="${env.BUILD_VERSION}"
+			env.DOCKERFILE_PATH="./"
+			env.DOCKER_REGISTRY_URL="https://hub.docker.com/repository/docker/aravindc27/pro-repo-2021"
+			env.DOCKER_CREDENTIAL_ID="docker-hub"
+		}
+		stage('Checkout Source Code') {
+			deleteDir()
+			checkout(changelog=true, poll:true,
+				scm:[
+				 $class='GitSCM'
+				 branches:[[name="${env.GIT_BUILD_BRANCH}"]],
+				 doGenerationSubmoduleConfigurations:false, gitTool:'Default',submoduleCfg:[],
+				 userRemoteConfigs:[[credentialsId:"${env.GIT_CREDENTIAL}",url:"${env.GIT_SSH_CLONE_URL}"]]			
+				]
+			)
+		}
+		
+		stage('Maven Build') {
+			steps {
+                sh 'mvn -B -DskipTests clean package' 
+            }
+		}
+		
+		stage('Build & Push Docker Image') {
+			when {
+                expression{
+                	EXECUTE_DOCKER_BUILD_PUSH =="true"
+                }
+            }
+            steps{
+            	script{
+            		docker.withRegistry(env.DOCKER_REGISTRY_URL,env.DOCKER_CREDENTIAL_ID){
+            			appsImage = docker.build(env.DOCKER_IMAGE_NAME,env.DOCKERFILE_PATH)
+            		}
+            		docker.withRegistry(env.DOCKER_REGISTRY_URL,env.DOCKER_CREDENTIAL_ID){
+            			appsImage.push(env.DOCKER_IMAGE_TAG)
+            		}	
+            	}
+            }
+		}
   
-  stages {
-    stage('Cloning Git') {
-      steps {
-        git([url: 'https://github.com/aravindcodehub/elocator.git', branch: 'master', credentialsId: 'd2703892-e658-4ac1-a465-880ca87fcf60'])
- 
-      }
     }
-    stage('Building image') {
-      steps{
-        script {
-          dockerImage = docker.build imagename
-        }
-      }
-    }
-    stage('Deploy Image') {
-      steps{
-        script {
-          docker.withRegistry( '', registryCredential ) {
-            dockerImage.push("$BUILD_NUMBER")
-             dockerImage.push('latest')
-          }
-        }
-      }
-    }
-    stage('Remove Unused docker image') {
-      steps{
-        sh "docker rmi $imagename:$BUILD_NUMBER"
-         sh "docker rmi $imagename:latest"
- 
-      }
-    }
-  }
 }
