@@ -2,7 +2,9 @@ pipeline {
   agent any
 
   tools {
-    maven "jenkin-mvn"
+   // maven "jenkin-mvn"
+    maven 'M2_HOME' 
+    jdk 'JAVA_HOME' 
   }  
  
   stages {
