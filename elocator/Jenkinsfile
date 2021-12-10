@@ -18,7 +18,7 @@ stages {
 			
 			//docker
 			env.EXECUTE_DOCKER_BUILD_PUSH ="true"
-			env.DOCKER_IMAGE_NAME="elocator/$(env.MAJOR_MINOR_VERSION)"
+			env.DOCKER_IMAGE_NAME="elocator/${env.MAJOR_MINOR_VERSION}"
 			env.DOCKER_IMAGE_TAG="${env.BUILD_VERSION}"
 			env.DOCKERFILE_PATH="./"
 			env.DOCKER_REGISTRY_URL="https://hub.docker.com/repository/docker/aravindc27/pro-repo-2021"
