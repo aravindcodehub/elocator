@@ -1,34 +1,44 @@
 pipeline {
-	
-	agent {
-        docker {
-            image 'maven:3-alpine' 
-            args '-v /root/.m2:/root/.m2' 
-        }
+  environment {
+    imagename = "aravind/elocator"
+    registryCredential = 'docker-hub'
+    dockerImage = ''
+  }
+  agent any
+  tools {
+    maven 'maven-3.8.4' 
+  }
+  
+  stages {
+    stage('Cloning Git') {
+      steps {
+        git([url: 'https://github.com/aravindcodehub/elocator.git', branch: 'master', credentialsId: 'd2703892-e658-4ac1-a465-880ca87fcf60'])
+ 
+      }
     }
-	
-	stages {
-		stage('Clone repository') {               
-	    	git branch: branch,
-	        	credentialsId: 'd2703892-e658-4ac1-a465-880ca87fcf60',
-	        	url: 'https://github.com/aravindcodehub/elocator.git'
-	    } 	
-		    
-	    stage('Build JAR') { 
-            steps {
-                sh 'mvn -B -DskipTests clean package' 
-            }
+    stage('Building image') {
+      steps{
+        script {
+          dockerImage = docker.build imagename
         }
-	     
-	    stage('Build Image') {
-	    	unstash 'jar'
-			app = docker.build image
-	    }
-	    
-	    stage('Push') {
-	    	docker.withRegistry('https://registry.hub.docker.com', 'docker-hub') {            
-				app.push("${env.BUILD_NUMBER}")
-	        }    
-	    }
-	}
+      }
+    }
+    stage('Deploy Image') {
+      steps{
+        script {
+          docker.withRegistry( '', registryCredential ) {
+            dockerImage.push("$BUILD_NUMBER")
+             dockerImage.push('latest')
+          }
+        }
+      }
+    }
+    stage('Remove Unused docker image') {
+      steps{
+        sh "docker rmi $imagename:$BUILD_NUMBER"
+         sh "docker rmi $imagename:latest"
+ 
+      }
+    }
+  }
 }
