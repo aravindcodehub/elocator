@@ -1,0 +1,35 @@
+node {
+	def app
+	def image = 'registry.hub.docker.com/elocator-0.0.1-SNAPSHOT'
+	def branch = 'master'
+	
+	try {
+		stage('Clone repository') {               
+	    	git branch: branch,
+	        	credentialsId: 'd2703892-e658-4ac1-a465-880ca87fcf60',
+	        	url: 'https://github.com/aravindcodehub/elocator.git'
+	    } 
+	
+		stage('Build JAR') {
+	    	docker.image('maven:3.6.3-jdk-11').inside('-v /root/.m2:/root/.m2') {
+	        	sh 'mvn -B clean package -Dmaven.test.skip=true'
+	        	stash includes: '**/target/elocator-0.0.1-SNAPSHOT.jar', name: 'jar'
+	    	}
+	    }
+	     
+	    stage('Build Image') {
+	    	unstash 'jar'
+			app = docker.build image
+	    }
+	    
+	    stage('Push') {
+	    	docker.withRegistry('https://registry.hub.docker.com', 'docker-hub') {            
+				app.push("${env.BUILD_NUMBER}")
+	        }    
+	    }
+	} catch (e) {
+		echo 'Error occurred during build process!'
+		echo e.toString()
+		currentBuild.result = 'FAILURE'
+	} 
+}
